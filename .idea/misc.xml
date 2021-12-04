@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Aaaandroid/Music-main/Android_Music-main/app/src/main/res/layout/activity_music.xml" value="0.1" />
+        <entry key="..\:/Aaaandroid/Music-main/Music/app/src/main/res/layout/activity_music.xml" value="0.2826086956521739" />
+        <entry key="..\:/Aaaandroid/Music/app/src/main/res/drawable/ic_launcher_background.xml" value="0.3411458333333333" />
+        <entry key="..\:/Aaaandroid/Music/app/src/main/res/layout/activity_main.xml" value="0.1580547112462006" />
+        <entry key="..\:/Aaaandroid/Music/app/src/main/res/layout/activity_music.xml" value="0.335" />
+        <entry key="..\:/Aaaandroid/MusicPlayer/Music/app/src/main/res/layout/activity_music.xml" value="0.1734375" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
