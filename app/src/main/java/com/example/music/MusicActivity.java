@@ -16,19 +16,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.icu.text.Transliterator;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +45,7 @@ public class MusicActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer = new MediaPlayer();
     private List<String> music_name = new ArrayList<>();
     private MusicDatabaseHelper dbHelper;
+    public int position;
     public int time;
     public String song;
 
@@ -58,6 +63,7 @@ public class MusicActivity extends AppCompatActivity {
     };
 
     @RequiresApi(api = Build.VERSION_CODES.R)
+    @SuppressLint("Range")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,22 +91,27 @@ public class MusicActivity extends AppCompatActivity {
         ContentValues values = new ContentValues();
         values.put("id", 0);
         values.put("name", "grave");
+        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 1);
         values.put("name", "lento");
+        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 2);
         values.put("name", "advent");
+        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 3);
         values.put("name", "ascent");
+        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 4);
         values.put("name", "ashore");
+        values.put("exist", 0);
         db.insert("Music", null, values);
 
 
@@ -108,7 +119,28 @@ public class MusicActivity extends AppCompatActivity {
         btn_last.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Cursor cursor = db.rawQuery("select id from Music where name = ?",
+                        new String[]{song});
+                cursor.moveToFirst();
+                int id = cursor.getInt(cursor.getColumnIndex("id"));
+                if (id == 0) {
+                    Toast.makeText(MusicActivity.this,
+                            "已经是第一首歌了哦", Toast.LENGTH_SHORT).show();
+                } else {
+                    id--;
+                    cursor = db.rawQuery("select name from Music where id = ?",
+                            new String[]{String.valueOf(id)});
+                    cursor.moveToFirst();
+                    song = cursor.getString(cursor.getColumnIndex("name"));
+                    try {
+                        mediaPlayer.reset();
+                        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
+                        mediaPlayer.prepare();      //进入准备状态
+                        mediaPlayer.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         //播放或暂停
@@ -129,15 +161,28 @@ public class MusicActivity extends AppCompatActivity {
         btn_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    mediaPlayer.reset();
-                    mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
-                    mediaPlayer.prepare();      //进入准备状态
-                    mediaPlayer.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                Cursor cursor = db.rawQuery("select id from Music where name = ?",
+                        new String[]{song});
+                cursor.moveToFirst();
+                int id = cursor.getInt(cursor.getColumnIndex("id"));
+                if (id == 4) {
+                    Toast.makeText(MusicActivity.this,
+                            "最后一首歌啦", Toast.LENGTH_SHORT).show();
+                } else {
+                    id++;
+                    cursor = db.rawQuery("select name from Music where id = ?",
+                            new String[]{String.valueOf(id)});
+                    cursor.moveToFirst();
+                    song = cursor.getString(cursor.getColumnIndex("name"));
+                    try {
+                        mediaPlayer.reset();
+                        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
+                        mediaPlayer.prepare();      //进入准备状态
+                        mediaPlayer.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-                btn_play.setText("暂停");
             }
         });
         //当前歌曲列表
@@ -160,6 +205,25 @@ public class MusicActivity extends AppCompatActivity {
                 btn_play.setText("暂停");
             }
         });
+        //进度条
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Log.d("look", String.valueOf(progress));
+                mediaPlayer.seekTo(progress*1000);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
 
         Intent intent = new Intent(this, DownloadService.class);
         startService(intent);
