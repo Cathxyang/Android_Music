@@ -23,7 +23,9 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -45,9 +47,10 @@ public class MusicActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer = new MediaPlayer();
     private List<String> music_name = new ArrayList<>();
     private MusicDatabaseHelper dbHelper;
-    public int position;
     public int time;
     public String song;
+    public Handler seekbarHandler = new Handler();
+    SeekBar seek;
 
 
     private ServiceConnection connection = new ServiceConnection() {
@@ -63,7 +66,7 @@ public class MusicActivity extends AppCompatActivity {
     };
 
     @RequiresApi(api = Build.VERSION_CODES.R)
-    @SuppressLint("Range")
+    @SuppressLint({"Range", "HandlerLeak"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +76,7 @@ public class MusicActivity extends AppCompatActivity {
         Button btn_play = (Button) findViewById(R.id.btn_play);
         Button btn_next = (Button) findViewById(R.id.btn_next);
         ListView list_music = (ListView) findViewById(R.id.list_music);
-        SeekBar seek = (SeekBar) findViewById(R.id.seek);
+        seek = (SeekBar) findViewById(R.id.seek);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(MusicActivity.this,
                 android.R.layout.simple_list_item_1, music_name);
@@ -133,10 +136,7 @@ public class MusicActivity extends AppCompatActivity {
                     cursor.moveToFirst();
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
-                        mediaPlayer.reset();
-                        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
-                        mediaPlayer.prepare();      //进入准备状态
-                        mediaPlayer.start();
+                       play(song);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -175,10 +175,7 @@ public class MusicActivity extends AppCompatActivity {
                     cursor.moveToFirst();
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
-                        mediaPlayer.reset();
-                        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
-                        mediaPlayer.prepare();      //进入准备状态
-                        mediaPlayer.start();
+                        play(song);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -195,10 +192,7 @@ public class MusicActivity extends AppCompatActivity {
                         + song + "/download";
                 downloadBinder.startDownload(context, url, song);
                 try {
-                    mediaPlayer.reset();
-                    mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
-                    mediaPlayer.prepare();      //进入准备状态
-                    mediaPlayer.start();
+                   play(song);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -209,8 +203,6 @@ public class MusicActivity extends AppCompatActivity {
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d("look", String.valueOf(progress));
-                mediaPlayer.seekTo(progress*1000);
             }
 
             @Override
@@ -220,6 +212,7 @@ public class MusicActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                mediaPlayer.seekTo(seekBar.getProgress() * 1000);
 
             }
         });
@@ -242,6 +235,22 @@ public class MusicActivity extends AppCompatActivity {
         unbindService(connection);
         mediaPlayer.stop();
         mediaPlayer.release();
+    }
+
+    //播放音乐
+    public void play(String song) throws IOException {
+        mediaPlayer.reset();
+        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
+        mediaPlayer.prepare();      //进入准备状态
+        runOnUiThread(new Runnable(){
+            @Override
+            public void run(){
+                seek.setProgress(mediaPlayer.getCurrentPosition() / 1000);
+                seekbarHandler.postDelayed(this, 1);
+            }
+        });
+        seek.setMax(mediaPlayer.getDuration() / 1000);
+        mediaPlayer.start();
     }
 
 }
