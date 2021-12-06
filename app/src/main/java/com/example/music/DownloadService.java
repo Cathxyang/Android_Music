@@ -19,6 +19,10 @@ import java.net.URL;
 
 public class DownloadService extends Service {
 
+    interface completeHandler {
+        void complete(Boolean result);
+    }
+
     private DownloadTask downloadTask;
 
     private String downloadUrl;
@@ -26,20 +30,23 @@ public class DownloadService extends Service {
     private DownloadBinder mBinder = new DownloadBinder();
 
     @Override
-    public IBinder onBind(Intent intent){
+    public IBinder onBind(Intent intent) {
         return mBinder;
     }
 
-    class DownloadBinder extends Binder{
+    class DownloadBinder extends Binder {
 
-        public void startDownload(Context context,String url, String song){
-            if(downloadTask == null){
-                downloadUrl = url;
-                downloadTask = new DownloadTask(song,context);
-                downloadTask.execute(downloadUrl);
-                Toast.makeText(DownloadService.this, "Downloading...",
-                        Toast.LENGTH_SHORT).show();
-            }
+        public void startDownload(Context context, String url, String song, completeHandler handler) {
+            downloadUrl = url;
+            downloadTask = new DownloadTask(song, context, new DownloadTask.Music() {
+                @Override
+                public void complete(Boolean result) {
+                    handler.complete(true);
+                }
+
+            });
+            downloadTask.execute(downloadUrl);
+
         }
 
     }

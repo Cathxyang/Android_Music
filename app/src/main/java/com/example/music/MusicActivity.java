@@ -48,6 +48,7 @@ public class MusicActivity extends AppCompatActivity {
     private List<String> music_name = new ArrayList<>();
     private MusicDatabaseHelper dbHelper;
     public int time;
+    public DownloadTask.Music music;
     public String song;
     public Handler seekbarHandler = new Handler();
     SeekBar seek;
@@ -136,7 +137,8 @@ public class MusicActivity extends AppCompatActivity {
                     cursor.moveToFirst();
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
-                       play(song);
+                        play(song);
+                        btn_play.setText("暂停");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -176,6 +178,7 @@ public class MusicActivity extends AppCompatActivity {
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
                         play(song);
+                        btn_play.setText("暂停");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -190,13 +193,22 @@ public class MusicActivity extends AppCompatActivity {
                 song = music_name.get(position);
                 String url = "https://freemusicarchive.org/track/"
                         + song + "/download";
-                downloadBinder.startDownload(context, url, song);
-                try {
-                   play(song);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                btn_play.setText("暂停");
+                downloadBinder.startDownload(context, url, song, new DownloadService.completeHandler() {
+                    @Override
+                    public void complete(Boolean result) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    play(song);
+                                    btn_play.setText("暂停");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }
+                });
             }
         });
         //进度条
@@ -242,9 +254,9 @@ public class MusicActivity extends AppCompatActivity {
         mediaPlayer.reset();
         mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
         mediaPlayer.prepare();      //进入准备状态
-        runOnUiThread(new Runnable(){
+        runOnUiThread(new Runnable() {
             @Override
-            public void run(){
+            public void run() {
                 seek.setProgress(mediaPlayer.getCurrentPosition() / 1000);
                 seekbarHandler.postDelayed(this, 1);
             }
