@@ -34,6 +34,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -51,8 +52,13 @@ public class MusicActivity extends AppCompatActivity {
     public DownloadTask.Music music;
     public String song;
     public Handler seekbarHandler = new Handler();
+    Button btn_last;
+    Button btn_play;
+    Button btn_next;
+    ListView list_music;
     SeekBar seek;
-
+    TextView text_music;                              
+    Context context = this;
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -72,12 +78,14 @@ public class MusicActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music);
-        dbHelper = new MusicDatabaseHelper(this, "Music.db", null, 1);
-        Button btn_last = (Button) findViewById(R.id.btn_last);
-        Button btn_play = (Button) findViewById(R.id.btn_play);
-        Button btn_next = (Button) findViewById(R.id.btn_next);
-        ListView list_music = (ListView) findViewById(R.id.list_music);
+        btn_last = (Button) findViewById(R.id.btn_last);
+        btn_play = (Button) findViewById(R.id.btn_play);
+        btn_next = (Button) findViewById(R.id.btn_next);
+        list_music = (ListView) findViewById(R.id.list_music);
         seek = (SeekBar) findViewById(R.id.seek);
+        text_music = (TextView) findViewById(R.id.song);
+
+        dbHelper = new MusicDatabaseHelper(this, "Music.db", null, 1);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(MusicActivity.this,
                 android.R.layout.simple_list_item_1, music_name);
@@ -95,27 +103,22 @@ public class MusicActivity extends AppCompatActivity {
         ContentValues values = new ContentValues();
         values.put("id", 0);
         values.put("name", "grave");
-        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 1);
         values.put("name", "lento");
-        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 2);
         values.put("name", "advent");
-        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 3);
         values.put("name", "ascent");
-        values.put("exist", 0);
         db.insert("Music", null, values);
         values.clear();
         values.put("id", 4);
         values.put("name", "ashore");
-        values.put("exist", 0);
         db.insert("Music", null, values);
 
 
@@ -138,7 +141,6 @@ public class MusicActivity extends AppCompatActivity {
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
                         play(song);
-                        btn_play.setText("暂停");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -178,7 +180,6 @@ public class MusicActivity extends AppCompatActivity {
                     song = cursor.getString(cursor.getColumnIndex("name"));
                     try {
                         play(song);
-                        btn_play.setText("暂停");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -186,29 +187,15 @@ public class MusicActivity extends AppCompatActivity {
             }
         });
         //当前歌曲列表
-        Context context = this;
         list_music.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 song = music_name.get(position);
-                String url = "https://freemusicarchive.org/track/"
-                        + song + "/download";
-                downloadBinder.startDownload(context, url, song, new DownloadService.completeHandler() {
-                    @Override
-                    public void complete(Boolean result) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    play(song);
-                                    btn_play.setText("暂停");
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                    }
-                });
+                try {
+                    play(song);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
         //进度条
@@ -251,18 +238,37 @@ public class MusicActivity extends AppCompatActivity {
 
     //播放音乐
     public void play(String song) throws IOException {
-        mediaPlayer.reset();
-        mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
-        mediaPlayer.prepare();      //进入准备状态
-        runOnUiThread(new Runnable() {
+        String url = "https://freemusicarchive.org/track/"
+                + song + "/download";
+        downloadBinder.startDownload(context, url, song, new DownloadService.completeHandler() {
             @Override
-            public void run() {
-                seek.setProgress(mediaPlayer.getCurrentPosition() / 1000);
-                seekbarHandler.postDelayed(this, 1);
+            public void complete(Boolean result) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            mediaPlayer.reset();
+                            mediaPlayer.setDataSource("/data/user/0/com.example.music/" + song);
+                            mediaPlayer.prepare();      //进入准备状态
+                            text_music.setText(song);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    seek.setProgress(mediaPlayer.getCurrentPosition() / 1000);
+                                    seekbarHandler.postDelayed(this, 1);
+                                }
+                            });
+                            seek.setMax(mediaPlayer.getDuration() / 1000);
+                            mediaPlayer.start();
+                            btn_play.setText("暂停");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
             }
         });
-        seek.setMax(mediaPlayer.getDuration() / 1000);
-        mediaPlayer.start();
     }
+
 
 }

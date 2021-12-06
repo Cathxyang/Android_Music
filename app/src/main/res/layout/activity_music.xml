@@ -12,6 +12,16 @@
         android:layout_height="0dp"
         android:layout_weight="10"/>
 
+    <TextView
+        android:id="@+id/song"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textSize="20dp"
+        android:paddingBottom="1dp"
+        android:layout_marginBottom="-15dp"/>
+
     <SeekBar
         android:id="@+id/seek"
         android:layout_width="match_parent"
